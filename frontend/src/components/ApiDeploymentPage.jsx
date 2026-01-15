@@ -21,7 +21,40 @@ function ApiDeploymentPage() {
         return Math.random().toString(36).substring(2, 8) + '-' + Math.random().toString(36).substring(2, 4);
     });
 
-    const apiUrl = `https://api.scrapetron.io/v1/endpoints/${endpointId}/live`;
+    const [apiUrl, setApiUrl] = useState(`https://sparkling-credit-95a6.professionalprovishal.workers.dev/v1/endpoints/${endpointId}/live`);
+    const [isDeploying, setIsDeploying] = useState(false);
+
+    const handleDeploy = async () => {
+        setIsDeploying(true);
+        try {
+            const response = await fetch('http://localhost:3000/api/deploy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: 'user-' + Math.random().toString(36).substr(2, 9), // Simulating user ID
+                    endpointName: endpointId,
+                    data: result || { message: "No data scraped yet" }, // Fallback if no result passed
+                    description: description
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setApiUrl(data.deployment.url);
+                alert(`Deployment Successful! \nURL: ${data.deployment.url}\n(Cloudflare Status: ${data.deployment.cloudflareStatus || 'local'})`);
+            } else {
+                alert('Deployment Failed: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Deployment error:', error);
+            alert('Deployment Error: ' + error.message);
+        } finally {
+            setIsDeploying(false);
+        }
+    };
 
     return (
         <div className="flex h-screen overflow-hidden bg-black text-white">
@@ -237,11 +270,23 @@ function ApiDeploymentPage() {
                                 Last deployed: <span className="text-gray-300">2 mins ago</span>{" "}
                                 by <span className="text-gray-300">alex@scrapetron.io</span>
                             </div>
-                            <button className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-black text-sm font-bold uppercase tracking-wider rounded shadow-glow hover:shadow-glow-active transition-all transform active:scale-95 flex items-center justify-center gap-2">
-                                <span className="material-symbols-outlined text-lg">
-                                    rocket_launch
-                                </span>
-                                Deploy New Endpoint
+                            <button
+                                onClick={handleDeploy}
+                                disabled={isDeploying}
+                                className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-black text-sm font-bold uppercase tracking-wider rounded shadow-glow hover:shadow-glow-active transition-all transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                {isDeploying ? (
+                                    <>
+                                        <div className="size-4 rounded-full border-2 border-black border-t-transparent animate-spin" />
+                                        Deploying...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-lg">
+                                            rocket_launch
+                                        </span>
+                                        Deploy New Endpoint
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

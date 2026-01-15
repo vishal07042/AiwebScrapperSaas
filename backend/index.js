@@ -105,34 +105,63 @@ app.post("/api/scrape/smart", async (req, res) => {
 
 		// Build dynamic schema from user's field definitions
 		const schemaFields = {};
+		let hasValidFields = false;
+
 		fields.forEach((field) => {
-			const zodType =
-				field.type === "number"
-					? "z.number()"
-					: field.type === "boolean"
-					? "z.boolean()"
-					: field.type === "array"
-					? "z.array(z.string())"
-					: "z.string()";
+			if (!field.name || !field.type) return; // Skip invalid fields
+
+			let zodType;
+			switch (field.type) {
+				case "number":
+					zodType = "z.number()";
+					break;
+				case "boolean":
+					zodType = "z.boolean()";
+					break;
+				case "array":
+					zodType = "z.array(z.string())";
+					break;
+				default:
+					zodType = "z.string()";
+			}
 
 			const optional = field.optional ? ".optional()" : "";
 			const description = field.description
-				? `.describe("${field.description}")`
+				? `.describe("${field.description.replace(/"/g, '\\"')}")`
 				: "";
 
 			schemaFields[field.name] = `${zodType}${optional}${description}`;
+			hasValidFields = true;
 		});
+
+		if (!hasValidFields) {
+			return res.status(400).json({
+				error: "No valid fields provided. Please add at least one field.",
+			});
+		}
 
 		// Create dynamic schema
 		const schemaCode = `z.object({ ${Object.entries(schemaFields)
 			.map(([key, value]) => `${key}: ${value}`)
 			.join(", ")} })`;
-		const schema = eval(schemaCode);
+
+		let schema;
+		try {
+			schema = eval(schemaCode);
+		} catch (error) {
+			console.error("Schema creation error:", error);
+			return res.status(400).json({
+				error: "Failed to create schema. Please check your field definitions.",
+			});
+		}
 
 		// Build dynamic prompt from field descriptions
 		const fieldDescriptions = fields
 			.map((f) => `- ${f.name}: ${f.description || f.name} (${f.type})`)
 			.join("\n");
+
+		console.log("🔍 Schema:", schemaCode);
+		console.log("📊 Sending ${contentToSend.length} characters to AI");
 
 		const { object } = await generateObject({
 			model: google("gemini-2.5-flash"),
@@ -161,9 +190,23 @@ ${contentToSend}`,
 		if (page) await page.close().catch(() => {});
 		if (browser) await browser.close().catch(() => {});
 
+		// Provide helpful error messages
+		let errorMessage = error.message;
+
+		if (error.message.includes("should be non-empty for OBJECT type")) {
+			errorMessage =
+				"Schema validation error. Make sure all fields have valid names and types.";
+		} else if (error.message.includes("timeout")) {
+			errorMessage =
+				"Page took too long to load. Try increasing waitTime in options.";
+		} else if (error.message.includes("net::ERR")) {
+			errorMessage =
+				"Failed to load the URL. Check if the website is accessible.";
+		}
+
 		res.status(500).json({
 			success: false,
-			error: error.message,
+			error: errorMessage,
 		});
 	}
 });
@@ -202,9 +245,9 @@ app.post("/api/scrape", async (req, res) => {
 
 		// Define a flexible schema if none provided
 		const defaultSchema = z.object({
-			data: z
-				.array(z.record(z.any()))
-				.describe("Extracted data from the page"),
+			extractedText: z
+				.string()
+				.describe("Main content extracted from the page"),
 		});
 
 		// Parse custom schema if provided
@@ -240,6 +283,7 @@ app.post("/api/scrape", async (req, res) => {
 	} catch (error) {
 		console.error("Scraping error:", error);
 
+		// Clean up browser if still open
 		if (page) await page.close().catch(() => {});
 		if (browser) await browser.close().catch(() => {});
 
@@ -440,139 +484,87 @@ app.post("/api/scrape/article", async (req, res) => {
 	}
 });
 
-// LeetCode profile scraping endpoint
-app.post("/api/scrape/leetcode", async (req, res) => {
-	let browser;
-	let page;
-
-	try {
-		const { username } = req.body;
-
-		if (!username) {
-			return res.status(400).json({ error: "Username is required" });
-		}
-
-		const url = `https://leetcode.com/${username}/`;
-
-		browser = await chromium.launch({ headless: true });
-		page = await browser.newPage();
-
-		await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
-
-		// Wait for dynamic content to load
-		await page.waitForTimeout(3000);
-
-		const textContent = await page.evaluate(() => document.body.innerText);
-
-		const schema = z.object({
-			problemsSolved: z
-				.number()
-				.describe("Total number of problems solved"),
-			ranking: z.number().describe("Global ranking"),
-			acceptanceRate: z.number().describe("Acceptance rate percentage"),
-		});
-
-		const { object } = await generateObject({
-			model: google("gemini-2.5-flash"),
-			schema: schema,
-			prompt: `Extract LeetCode profile stats from this page:
-      - problemsSolved: total problems solved
-      - ranking: global ranking
-      - acceptanceRate: acceptance rate value
-      
-      Page content:
-      ${textContent.slice(0, 15000)}`,
-		});
-
-		await page.close();
-		await browser.close();
-
-		res.json({
-			success: true,
-			data: object,
-		});
-	} catch (error) {
-		console.error("Error scraping LeetCode:", error);
-
-		if (page) await page.close().catch(() => {});
-		if (browser) await browser.close().catch(() => {});
-
-		res.status(500).json({
-			success: false,
-			error: error.message,
-		});
-	}
-});
-
-// In-memory storage for deployments (replace with database in production)
-const deployments = new Map();
-
-// Deploy JSON data to a unique endpoint
+// Cloudflare Deploy Endpoint
 app.post("/api/deploy", async (req, res) => {
 	try {
 		const { userId, endpointName, data, description } = req.body;
 
-		// Validation
 		if (!userId || !endpointName || !data) {
 			return res.status(400).json({
-				success: false,
-				error: "Missing required fields: userId, endpointName, and data are required",
-				example: {
-					userId: "user123",
-					endpointName: "my-scraper-data",
-					data: { title: "Example", price: "$99" },
-					description: "Product data from Amazon"
-				}
+				error: "Missing required fields: userId, endpointName, data",
 			});
 		}
 
-		// Validate endpoint name (alphanumeric and hyphens only)
-		if (!/^[a-z0-9-]+$/.test(endpointName)) {
-			return res.status(400).json({
-				success: false,
-				error: "Invalid endpoint name. Use lowercase alphanumeric characters and hyphens only."
+		// Configuration from env
+		const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+		const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+		const namespaceId = process.env.CLOUDFLARE_KV_NAMESPACE_ID;
+		const workerUrl = process.env.CLOUDFLARE_WORKER_URL;
+
+		// Check if configuration is present
+		if (!accountId || !apiToken || !namespaceId) {
+			console.error("Missing Cloudflare configuration");
+			return res.status(500).json({
+				error: "Server misconfiguration: Missing Cloudflare credentials",
+				details:
+					"Please check CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, and CLOUDFLARE_KV_NAMESPACE_ID in .env",
 			});
 		}
 
-		const deploymentId = `${userId}:${endpointName}`;
-		const now = new Date().toISOString();
-
-		// Check if deployment exists
-		const existingDeployment = deployments.get(deploymentId);
-		const isUpdate = !!existingDeployment;
-
-		const deployment = {
-			deploymentId,
-			userId,
-			endpointName,
+		const key = `${userId}:${endpointName}`;
+		const value = JSON.stringify({
 			data,
-			description: description || "No description provided",
-			deployedAt: existingDeployment ? existingDeployment.deployedAt : now,
-			updatedAt: now,
-			accessCount: existingDeployment ? existingDeployment.accessCount : 0,
-		};
+			description,
+			deployedAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		});
 
-		// Store in memory (in production, this would be Cloudflare KV)
-		deployments.set(deploymentId, deployment);
+		// Write to KV via Cloudflare API
+		console.log(`Deploying to Cloudflare KV: ${key}`);
+		const response = await fetch(
+			`https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/${key}`,
+			{
+				method: "PUT",
+				headers: {
+					Authorization: `Bearer ${apiToken}`,
+					"Content-Type": "text/plain",
+				},
+				body: value,
+			}
+		);
 
-		// Construct the worker URL
-		const workerUrl = process.env.CLOUDFLARE_WORKER_URL || 'https://scraper-api-worker.YOUR-SUBDOMAIN.workers.dev';
-		const deployedUrl = `${workerUrl}/${userId}/${endpointName}`;
+		if (!response.ok) {
+			const errorText = await response.text();
+			console.error("Cloudflare API Error:", errorText);
 
-		console.log(`✅ ${isUpdate ? 'Updated' : 'Deployed'} endpoint: ${deployedUrl}`);
+			let errorMsg = `Cloudflare API failed: ${response.status} ${response.statusText}`;
+			try {
+				const errorJson = JSON.parse(errorText);
+				if (errorJson.errors && errorJson.errors.length > 0) {
+					errorMsg += ` - ${errorJson.errors[0].message}`;
+				}
+			} catch (e) {
+				errorMsg += ` - ${errorText.substring(0, 100)}`;
+			}
+
+			throw new Error(errorMsg);
+		}
+
+		// Construct the live URL
+		// Ensure workerUrl doesn't have a trailing slash for consistency
+		const baseUrl =
+			(workerUrl || "").replace(/\/$/, "") ||
+			"https://your-worker.workers.dev";
+		const deploymentUrl = `${baseUrl}/${userId}/${endpointName}`;
 
 		res.json({
 			success: true,
-			message: isUpdate ? "Deployment updated successfully" : "Deployment created successfully",
 			deployment: {
-				url: deployedUrl,
-				userId,
-				endpointName,
-				deployedAt: deployment.deployedAt,
-				updatedAt: deployment.updatedAt,
-			}
+				url: deploymentUrl,
+				cloudflareStatus: "live",
+				key: key,
+			},
 		});
-
 	} catch (error) {
 		console.error("Deployment error:", error);
 		res.status(500).json({
@@ -582,126 +574,48 @@ app.post("/api/deploy", async (req, res) => {
 	}
 });
 
-// Get deployed data (simulates what Cloudflare Worker does)
-app.get("/api/serve/:userId/:endpointName", async (req, res) => {
-	try {
-		const { userId, endpointName } = req.params;
-		const deploymentId = `${userId}:${endpointName}`;
-		
-		const deployment = deployments.get(deploymentId);
+// app.post('/api/scrape/leetcode', async (req, res) => {
+//   let browser;
+//   let page;
 
-		if (!deployment) {
-			return res.status(404).json({
-				success: false,
-				error: "Endpoint not found",
-				userId,
-				endpointName,
-			});
-		}
+//   try {
+//     const { username } = req.body;
 
-		// Increment access count
-		deployment.accessCount++;
-		deployments.set(deploymentId, deployment);
+//     if (!username) {
+//       return res.status(400).json({ error: 'Username is required' });
+//     }
 
-		// Return the data
-		res.json({
-			success: true,
-			userId,
-			endpointName,
-			data: deployment.data,
-			deployedAt: deployment.deployedAt,
-			updatedAt: deployment.updatedAt,
-		});
+//     const url = `https://leetcode.com/${username}/`;
 
-	} catch (error) {
-		console.error("Serve error:", error);
-		res.status(500).json({
-			success: false,
-			error: error.message,
-		});
-	}
-});
+//     browser = await chromium.launch({ headless: true });
+//     page = await browser.newPage();
 
-// List all deployments for a user
-app.get("/api/deployments/:userId", async (req, res) => {
-	try {
-		const { userId } = req.params;
-		
-		const userDeployments = Array.from(deployments.values())
-			.filter(d => d.userId === userId)
-			.map(d => ({
-				endpointName: d.endpointName,
-				description: d.description,
-				deployedAt: d.deployedAt,
-				updatedAt: d.updatedAt,
-				accessCount: d.accessCount,
-				url: `${process.env.CLOUDFLARE_WORKER_URL || 'https://scraper-api-worker.YOUR-SUBDOMAIN.workers.dev'}/${userId}/${d.endpointName}`
-			}));
+//     await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
 
-		res.json({
-			success: true,
-			userId,
-			count: userDeployments.length,
-			deployments: userDeployments,
-		});
+//     // Wait for dynamic content to load
+//     await page.waitForTimeout(3000);
 
-	} catch (error) {
-		console.error("List deployments error:", error);
-		res.status(500).json({
-			success: false,
-			error: error.message,
-		});
-	}
-});
+//     const textContent = await page.evaluate(() =>
+//   console.log(`🚀 AI Web Scraper API running on http://localhost:${PORT}`);
+//   console.log(`\nAvailable endpoints:`);
+//   console.log(`  GET  /                          - Health check`);
+//   console.log(`  POST /api/scrape/smart          - Smart scraping (define your own fields!)`);
+//   console.log(`  POST /api/scrape                - Generic scraping`);
+//   console.log(`  GET  /api/scrape/hackernews     - Scrape Hacker News`);
+//   console.log(`  POST /api/scrape/products       - Scrape product listings`);
+//   console.log(`  POST /api/scrape/article        - Scrape article content`);
+// });
 
-// Delete a deployment
-app.delete("/api/deploy/:userId/:endpointName", async (req, res) => {
-	try {
-		const { userId, endpointName } = req.params;
-		const deploymentId = `${userId}:${endpointName}`;
-		
-		const deployment = deployments.get(deploymentId);
-
-		if (!deployment) {
-			return res.status(404).json({
-				success: false,
-				error: "Deployment not found",
-			});
-		}
-
-		deployments.delete(deploymentId);
-
-		console.log(`🗑️  Deleted deployment: ${deploymentId}`);
-
-		res.json({
-			success: true,
-			message: "Deployment deleted successfully",
-		});
-
-	} catch (error) {
-		console.error("Delete deployment error:", error);
-		res.status(500).json({
-			success: false,
-			error: error.message,
-		});
-	}
-});
-
+// Start server
 app.listen(PORT, () => {
 	console.log(`🚀 AI Web Scraper API running on http://localhost:${PORT}`);
 	console.log(`\nAvailable endpoints:`);
 	console.log(`  GET  /                          - Health check`);
-	console.log(
-		`  POST /api/scrape/smart          - Smart scraping (define your own fields!)`
-	);
 	console.log(`  POST /api/scrape                - Generic scraping`);
 	console.log(`  GET  /api/scrape/hackernews     - Scrape Hacker News`);
 	console.log(`  POST /api/scrape/products       - Scrape product listings`);
 	console.log(`  POST /api/scrape/article        - Scrape article content`);
-	console.log(`  POST /api/scrape/leetcode       - Scrape LeetCode profile`);
-	console.log(`\nDeployment endpoints:`);
-	console.log(`  POST /api/deploy                - Deploy JSON to endpoint`);
-	console.log(`  GET  /api/serve/:userId/:endpoint - Get deployed data`);
-	console.log(`  GET  /api/deployments/:userId   - List user deployments`);
-	console.log(`  DELETE /api/deploy/:userId/:endpoint - Delete deployment`);
+	console.log(
+		`  POST /api/deploy                - Deploy data to Cloudflare KV`
+	);
 });

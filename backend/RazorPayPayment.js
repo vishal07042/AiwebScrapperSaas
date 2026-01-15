@@ -12,6 +12,9 @@ const instance = new Razorpay({
             amount: amount * 100,
             currency: 'INR',
             receipt: `order_${Date.now()}`,
+            notes   :{
+                
+            }
         });
         return order;
     }

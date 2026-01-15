@@ -81,7 +81,7 @@ function LandingPage() {
               Try Live Demo
             </button>
             {/* Solid White Button */}
-            <button className="flex items-center justify-center px-8 py-3 bg-white text-black text-base font-bold tracking-wide rounded hover:bg-gray-200 transition-colors">
+            <button className="flex items-center justify-center px-8 py-3 bg-white text-black text-base font-bold tracking-wide rounded hover:bg-gray-200 transition-colors" onClick={() => navigate("/app")}>
               Get Started Free
             </button>
           </div>

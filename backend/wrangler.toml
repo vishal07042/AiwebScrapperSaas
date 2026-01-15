@@ -5,7 +5,7 @@ compatibility_date = "2024-01-01"
 # KV Namespace binding
 [[kv_namespaces]]
 binding = "SCRAPER_DATA"
-id = "YOUR_KV_NAMESPACE_ID"  # Replace with your actual KV namespace ID
+id = "f900575e41a04421a3428eebc1495e88"  # Replace with your actual KV namespace ID
 
 # Optional: Add routes if you want to use a custom domain
 # routes = [
@@ -16,5 +16,4 @@ id = "YOUR_KV_NAMESPACE_ID"  # Replace with your actual KV namespace ID
 [build]
 command = ""
 
-[env.production]
-name = "scraper-api-worker"
+
