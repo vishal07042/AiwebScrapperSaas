@@ -23,6 +23,7 @@
 		"dotenv": "^16.4.7",
 		"express": "^4.21.2",
 		"playwright": "^1.57.0",
+		"razorpay": "^2.9.6",
 		"zod": "^3.25.76"
 	},
 	"overrides": {

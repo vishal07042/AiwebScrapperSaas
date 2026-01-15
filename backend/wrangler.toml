@@ -1,0 +1,20 @@
+name = "scraper-api-worker"
+main = "cloudflare-worker.js"
+compatibility_date = "2024-01-01"
+
+# KV Namespace binding
+[[kv_namespaces]]
+binding = "SCRAPER_DATA"
+id = "YOUR_KV_NAMESPACE_ID"  # Replace with your actual KV namespace ID
+
+# Optional: Add routes if you want to use a custom domain
+# routes = [
+#   { pattern = "api.yourdomain.com/*", zone_id = "YOUR_ZONE_ID" }
+# ]
+
+# Worker settings
+[build]
+command = ""
+
+[env.production]
+name = "scraper-api-worker"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Globe, Zap, Settings, Code, Trash2, Plus, ChevronDown, ChevronUp, Copy, Check, Sparkles, Activity, FileJson, AlignLeft, Box, FileText, Type } from 'lucide-react';
+import { Terminal, Globe, Zap, Settings, Code, Trash2, Plus, ChevronDown, ChevronUp, Copy, Check, Sparkles, Activity, FileJson, AlignLeft, Box, FileText, Type, Rocket, ExternalLink, X } from 'lucide-react';
 
 export default function AIWebScraper() {
     const [url, setUrl] = useState('');
@@ -20,6 +20,16 @@ export default function AIWebScraper() {
     const [error, setError] = useState('');
     const [showOptions, setShowOptions] = useState(false);
     const [copied, setCopied] = useState(false);
+    
+    // Deployment states
+    const [showDeployModal, setShowDeployModal] = useState(false);
+    const [deploymentConfig, setDeploymentConfig] = useState({
+        userId: 'demo-user',
+        endpointName: '',
+        description: ''
+    });
+    const [deploymentResult, setDeploymentResult] = useState(null);
+    const [deploying, setDeploying] = useState(false);
 
     useEffect(() => {
         if (result) {
@@ -165,9 +175,65 @@ export default function AIWebScraper() {
             const parsed = JSON.parse(editableJson);
             setEditableJson(JSON.stringify(parsed));
             setResult(parsed); // Sync internal state
-        } catch (e) {
+        } catch {
             setError('Invalid JSON: Cannot minify');
         }
+    };
+
+    const handleDeploy = async () => {
+        if (!editableJson || !result) {
+            setError('No data to deploy. Please scrape some data first.');
+            return;
+        }
+
+        if (!deploymentConfig.endpointName) {
+            setError('Please enter an endpoint name');
+            return;
+        }
+
+        setDeploying(true);
+        setError('');
+
+        try {
+            const response = await fetch('http://localhost:3000/api/deploy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: deploymentConfig.userId,
+                    endpointName: deploymentConfig.endpointName.toLowerCase().replace(/\s+/g, '-'),
+                    description: deploymentConfig.description || `Deployed from ${url}`,
+                    data: JSON.parse(editableJson)
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setDeploymentResult(data.deployment);
+                setShowDeployModal(false);
+                // Show success notification
+                setTimeout(() => {
+                    alert(`✅ Deployment successful!\n\nYour data is now available at:\n${data.deployment.url}`);
+                }, 100);
+            } else {
+                setError(data.error || 'Deployment failed');
+            }
+        } catch {
+            setError('Failed to connect to deployment API. Make sure the server is running.');
+        } finally {
+            setDeploying(false);
+        }
+    };
+
+    const openDeployModal = () => {
+        // Auto-generate endpoint name from URL if possible
+        const autoName = url.split('/')[2]?.replace(/\./g, '-') || 'my-endpoint';
+        setDeploymentConfig({
+            ...deploymentConfig,
+            endpointName: autoName,
+            description: `Data from ${url}`
+        });
+        setShowDeployModal(true);
     };
 
     return (
@@ -544,6 +610,13 @@ export default function AIWebScraper() {
                                                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                                                 {copied ? 'Copied' : 'Copy'}
                                             </button>
+                                            <button
+                                                onClick={openDeployModal}
+                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 rounded-lg transition-all text-xs font-bold text-black uppercase tracking-wide shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+                                            >
+                                                <Rocket className="w-3.5 h-3.5" />
+                                                Deploy
+                                            </button>
                                         </div>
                                     </div>
 
@@ -618,6 +691,149 @@ export default function AIWebScraper() {
                     </div>
                 </div>
             </div>
+
+            {/* Deployment Modal */}
+            {showDeployModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-zinc-950 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg animate-in slide-in-from-bottom-4 duration-300">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-gray-900">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-cyan-500/10 rounded-lg">
+                                    <Rocket className="w-5 h-5 text-cyan-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white">Deploy to API</h2>
+                                    <p className="text-xs text-gray-500 mt-0.5">Create a live endpoint for your JSON data</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowDeployModal(false)}
+                                className="p-2 hover:bg-gray-900 rounded-lg transition-colors text-gray-400 hover:text-white"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider ml-1">
+                                    User ID
+                                </label>
+                                <input
+                                    type="text"
+                                    value={deploymentConfig.userId}
+                                    onChange={(e) => setDeploymentConfig({ ...deploymentConfig, userId: e.target.value })}
+                                    placeholder="e.g., demo-user"
+                                    className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder:text-gray-700"
+                                />
+                                <p className="text-xs text-gray-600 mt-1.5 ml-1">This identifies your deployment namespace</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider ml-1">
+                                    Endpoint Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={deploymentConfig.endpointName}
+                                    onChange={(e) => setDeploymentConfig({ ...deploymentConfig, endpointName: e.target.value })}
+                                    placeholder="e.g., product-data"
+                                    className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder:text-gray-700 font-mono"
+                                />
+                                <p className="text-xs text-gray-600 mt-1.5 ml-1">Use lowercase letters, numbers, and hyphens only</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider ml-1">
+                                    Description (Optional)
+                                </label>
+                                <textarea
+                                    value={deploymentConfig.description}
+                                    onChange={(e) => setDeploymentConfig({ ...deploymentConfig, description: e.target.value })}
+                                    placeholder="Describe what this API endpoint contains..."
+                                    className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder:text-gray-700 resize-none h-24"
+                                />
+                            </div>
+
+                            {/* Preview URL */}
+                            <div className="p-4 bg-black rounded-xl border border-gray-900">
+                                <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-semibold">Deployment URL Preview</p>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 bg-zinc-950 rounded-lg px-3 py-2 border border-gray-800">
+                                        <p className="text-xs font-mono text-cyan-400 break-all">
+                                            https://worker.dev/{deploymentConfig.userId}/{deploymentConfig.endpointName || 'endpoint-name'}
+                                        </p>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 text-gray-600" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-900 bg-black/50">
+                            <button
+                                onClick={() => setShowDeployModal(false)}
+                                className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeploy}
+                                disabled={deploying || !deploymentConfig.endpointName}
+                                className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:from-gray-800 disabled:to-gray-800 text-black disabled:text-gray-600 text-sm font-bold rounded-xl transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.3)] disabled:shadow-none disabled:cursor-not-allowed"
+                            >
+                                {deploying ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-black border-t-transparent"></div>
+                                        Deploying...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Rocket className="w-4 h-4" />
+                                        Deploy Now
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Deployment Success Message */}
+            {deploymentResult && (
+                <div className="fixed bottom-8 right-8 z-50 bg-zinc-950 border border-emerald-500/30 rounded-xl shadow-2xl p-5 w-96 animate-in slide-in-from-bottom-8 duration-300">
+                    <div className="flex items-start gap-4">
+                        <div className="p-2 bg-emerald-500/10 rounded-lg">
+                            <Check className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-sm font-bold text-white mb-1">Deployment Successful!</h3>
+                            <p className="text-xs text-gray-400 mb-3">Your API endpoint is now live</p>
+                            <div className="flex items-center gap-2 bg-black rounded-lg px-3 py-2 border border-gray-900">
+                                <p className="text-xs font-mono text-emerald-400 break-all flex-1">
+                                    {deploymentResult.url}
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(deploymentResult.url);
+                                    }}
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                >
+                                    <Copy className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setDeploymentResult(null)}
+                            className="text-gray-500 hover:text-white transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

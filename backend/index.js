@@ -504,6 +504,189 @@ app.post("/api/scrape/leetcode", async (req, res) => {
 	}
 });
 
+// In-memory storage for deployments (replace with database in production)
+const deployments = new Map();
+
+// Deploy JSON data to a unique endpoint
+app.post("/api/deploy", async (req, res) => {
+	try {
+		const { userId, endpointName, data, description } = req.body;
+
+		// Validation
+		if (!userId || !endpointName || !data) {
+			return res.status(400).json({
+				success: false,
+				error: "Missing required fields: userId, endpointName, and data are required",
+				example: {
+					userId: "user123",
+					endpointName: "my-scraper-data",
+					data: { title: "Example", price: "$99" },
+					description: "Product data from Amazon"
+				}
+			});
+		}
+
+		// Validate endpoint name (alphanumeric and hyphens only)
+		if (!/^[a-z0-9-]+$/.test(endpointName)) {
+			return res.status(400).json({
+				success: false,
+				error: "Invalid endpoint name. Use lowercase alphanumeric characters and hyphens only."
+			});
+		}
+
+		const deploymentId = `${userId}:${endpointName}`;
+		const now = new Date().toISOString();
+
+		// Check if deployment exists
+		const existingDeployment = deployments.get(deploymentId);
+		const isUpdate = !!existingDeployment;
+
+		const deployment = {
+			deploymentId,
+			userId,
+			endpointName,
+			data,
+			description: description || "No description provided",
+			deployedAt: existingDeployment ? existingDeployment.deployedAt : now,
+			updatedAt: now,
+			accessCount: existingDeployment ? existingDeployment.accessCount : 0,
+		};
+
+		// Store in memory (in production, this would be Cloudflare KV)
+		deployments.set(deploymentId, deployment);
+
+		// Construct the worker URL
+		const workerUrl = process.env.CLOUDFLARE_WORKER_URL || 'https://scraper-api-worker.YOUR-SUBDOMAIN.workers.dev';
+		const deployedUrl = `${workerUrl}/${userId}/${endpointName}`;
+
+		console.log(`✅ ${isUpdate ? 'Updated' : 'Deployed'} endpoint: ${deployedUrl}`);
+
+		res.json({
+			success: true,
+			message: isUpdate ? "Deployment updated successfully" : "Deployment created successfully",
+			deployment: {
+				url: deployedUrl,
+				userId,
+				endpointName,
+				deployedAt: deployment.deployedAt,
+				updatedAt: deployment.updatedAt,
+			}
+		});
+
+	} catch (error) {
+		console.error("Deployment error:", error);
+		res.status(500).json({
+			success: false,
+			error: error.message,
+		});
+	}
+});
+
+// Get deployed data (simulates what Cloudflare Worker does)
+app.get("/api/serve/:userId/:endpointName", async (req, res) => {
+	try {
+		const { userId, endpointName } = req.params;
+		const deploymentId = `${userId}:${endpointName}`;
+		
+		const deployment = deployments.get(deploymentId);
+
+		if (!deployment) {
+			return res.status(404).json({
+				success: false,
+				error: "Endpoint not found",
+				userId,
+				endpointName,
+			});
+		}
+
+		// Increment access count
+		deployment.accessCount++;
+		deployments.set(deploymentId, deployment);
+
+		// Return the data
+		res.json({
+			success: true,
+			userId,
+			endpointName,
+			data: deployment.data,
+			deployedAt: deployment.deployedAt,
+			updatedAt: deployment.updatedAt,
+		});
+
+	} catch (error) {
+		console.error("Serve error:", error);
+		res.status(500).json({
+			success: false,
+			error: error.message,
+		});
+	}
+});
+
+// List all deployments for a user
+app.get("/api/deployments/:userId", async (req, res) => {
+	try {
+		const { userId } = req.params;
+		
+		const userDeployments = Array.from(deployments.values())
+			.filter(d => d.userId === userId)
+			.map(d => ({
+				endpointName: d.endpointName,
+				description: d.description,
+				deployedAt: d.deployedAt,
+				updatedAt: d.updatedAt,
+				accessCount: d.accessCount,
+				url: `${process.env.CLOUDFLARE_WORKER_URL || 'https://scraper-api-worker.YOUR-SUBDOMAIN.workers.dev'}/${userId}/${d.endpointName}`
+			}));
+
+		res.json({
+			success: true,
+			userId,
+			count: userDeployments.length,
+			deployments: userDeployments,
+		});
+
+	} catch (error) {
+		console.error("List deployments error:", error);
+		res.status(500).json({
+			success: false,
+			error: error.message,
+		});
+	}
+});
+
+// Delete a deployment
+app.delete("/api/deploy/:userId/:endpointName", async (req, res) => {
+	try {
+		const { userId, endpointName } = req.params;
+		const deploymentId = `${userId}:${endpointName}`;
+		
+		const deployment = deployments.get(deploymentId);
+
+		if (!deployment) {
+			return res.status(404).json({
+				success: false,
+				error: "Deployment not found",
+			});
+		}
+
+		deployments.delete(deploymentId);
+
+		console.log(`🗑️  Deleted deployment: ${deploymentId}`);
+
+		res.json({
+			success: true,
+			message: "Deployment deleted successfully",
+		});
+
+	} catch (error) {
+		console.error("Delete deployment error:", error);
+		res.status(500).json({
+			success: false,
+			error: error.message,
+		});
+	}
+});
+
 app.listen(PORT, () => {
 	console.log(`🚀 AI Web Scraper API running on http://localhost:${PORT}`);
 	console.log(`\nAvailable endpoints:`);
@@ -516,4 +699,9 @@ app.listen(PORT, () => {
 	console.log(`  POST /api/scrape/products       - Scrape product listings`);
 	console.log(`  POST /api/scrape/article        - Scrape article content`);
 	console.log(`  POST /api/scrape/leetcode       - Scrape LeetCode profile`);
+	console.log(`\nDeployment endpoints:`);
+	console.log(`  POST /api/deploy                - Deploy JSON to endpoint`);
+	console.log(`  GET  /api/serve/:userId/:endpoint - Get deployed data`);
+	console.log(`  GET  /api/deployments/:userId   - List user deployments`);
+	console.log(`  DELETE /api/deploy/:userId/:endpoint - Delete deployment`);
 });
