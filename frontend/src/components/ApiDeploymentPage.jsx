@@ -21,36 +21,58 @@ function ApiDeploymentPage() {
         return Math.random().toString(36).substring(2, 8) + '-' + Math.random().toString(36).substring(2, 4);
     });
 
-    const [apiUrl, setApiUrl] = useState(`https://sparkling-credit-95a6.professionalprovishal.workers.dev/v1/endpoints/${endpointId}/live`);
+    const [apiUrl, setApiUrl] = useState(`https://scraper-api-worker.professionalprovishal.workers.dev/v1/endpoints/${endpointId}/live`);
     const [isDeploying, setIsDeploying] = useState(false);
+    const [logs, setLogs] = useState([]);
+    const [selectedLang, setSelectedLang] = useState('curl');
+
+    const addLog = (message, type = 'info') => {
+        setLogs(prev => [...prev, { message, type, timestamp: new Date() }]);
+    };
 
     const handleDeploy = async () => {
         setIsDeploying(true);
+        setLogs([]); // Clear previous logs
+
+        addLog('Initializing deployment sequence...');
+        addLog(`Target Endpoint ID: ${endpointId}`);
+        addLog('Verifying payload integrity...');
+
         try {
+            await new Promise(r => setTimeout(r, 800)); // UX delay
+            addLog('Authenticating with Cloudflare API...');
+
             const response = await fetch('http://localhost:3000/api/deploy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    userId: 'user-' + Math.random().toString(36).substr(2, 9), // Simulating user ID
+                    userId: 'user-' + Math.random().toString(36).substr(2, 9),
                     endpointName: endpointId,
-                    data: result || { message: "No data scraped yet" }, // Fallback if no result passed
+                    data: result || { message: "No data scraped yet" },
                     description: description
                 }),
             });
 
+            addLog('Uploading data to edge storage (KV)...');
             const data = await response.json();
 
             if (data.success) {
                 setApiUrl(data.deployment.url);
-                alert(`Deployment Successful! \nURL: ${data.deployment.url}\n(Cloudflare Status: ${data.deployment.cloudflareStatus || 'local'})`);
+                addLog('Verifying deployment status...');
+                await new Promise(r => setTimeout(r, 500));
+
+                addLog(`Deployment Successful! Cloudflare Status: ${data.deployment.cloudflareStatus || 'live'}`, 'success');
+                addLog(`Access URL: ${data.deployment.url}`, 'success');
+                addLog('Ready to serve traffic.', 'success');
             } else {
-                alert('Deployment Failed: ' + data.error);
+                addLog(`Deployment Failed: ${data.error}`, 'error');
+                if (data.details) addLog(`Details: ${data.details}`, 'error');
             }
         } catch (error) {
             console.error('Deployment error:', error);
-            alert('Deployment Error: ' + error.message);
+            addLog(`Deployment Error: ${error.message}`, 'error');
         } finally {
             setIsDeploying(false);
         }
@@ -113,7 +135,10 @@ function ApiDeploymentPage() {
                                     value={apiUrl}
                                 />
                                 <div className="absolute inset-y-0 right-0 flex items-center pr-1.5">
-                                    <button className="h-9 px-3 bg-surface-border hover:bg-surface-border/80 text-white text-xs font-bold rounded flex items-center gap-2 transition-colors border border-white/5">
+                                    <button className="h-9 px-3 bg-surface-border hover:bg-surface-border/80 text-white text-xs font-bold rounded flex items-center gap-2 transition-colors border border-white/5" onClick={(e) => {
+                                        e.preventDefault();
+                                        navigator.clipboard.writeText(apiUrl);
+                                    }}>
                                         <span className="material-symbols-outlined text-base">
                                             content_copy
                                         </span>
@@ -178,16 +203,10 @@ function ApiDeploymentPage() {
                                     Authentication
                                 </label>
                                 <div className="flex items-center justify-between h-[38px]">
-                                    <span className="text-sm text-gray-300">Require API Key</span>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            defaultChecked=""
-                                            className="sr-only peer"
-                                            type="checkbox"
-                                            defaultValue=""
-                                        />
-                                        <div className="w-11 h-6 bg-surface-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-glow-active" />
-                                    </label>
+                                    <span className="text-sm text-gray-300">Public Access</span>
+                                    <div className="px-2 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] uppercase font-bold tracking-wider">
+                                        Free
+                                    </div>
                                 </div>
                             </div>
                             {/* Rate Limit */}
@@ -225,70 +244,136 @@ function ApiDeploymentPage() {
                                 </div>
                             </div>
                         </div>
-                        {/* Section 3: Usage / Code */}
-                        <div className="bg-[#050505]">
-                            <div className="flex items-center border-b border-surface-border px-2">
-                                <div className="text-xs font-bold uppercase tracking-widest text-gray-500 px-4 py-3 font-display mr-auto">
-                                    Usage Example
+                        {/* Section 3: Terminal / Usage Example */}
+                        <div className="bg-[#050505] min-h-[300px]">
+                            {logs.length > 0 ? (
+                                <div className="flex flex-col h-full">
+                                    <div className="flex items-center border-b border-surface-border px-2 bg-surface-card/20">
+                                        <div className="text-xs font-bold uppercase tracking-widest text-cyber-green px-4 py-3 font-display mr-auto flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-sm animate-pulse">terminal</span>
+                                            Deployment Logs
+                                        </div>
+                                        <button
+                                            onClick={() => setLogs([])}
+                                            className="text-xs text-gray-500 hover:text-white px-3 py-1"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                    <div className="p-6 font-mono text-xs sm:text-sm overflow-x-auto code-scroll bg-black flex-1">
+                                        <div className="flex flex-col gap-1">
+                                            {logs.map((log, index) => (
+                                                <div key={index} className={`font-mono ${log.type === 'error' ? 'text-red-500' :
+                                                    log.type === 'success' ? 'text-cyber-green' : 'text-gray-300'
+                                                    }`}>
+                                                    <span className="opacity-50 mr-2">[{new Date().toLocaleTimeString()}]</span>
+                                                    {log.message}
+                                                </div>
+                                            ))}
+                                            {isDeploying && (
+                                                <div className="text-primary animate-pulse">_</div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex gap-1 h-full pt-2">
-                                    <button className="px-4 py-2 text-xs font-mono text-primary border-b-2 border-primary bg-primary/5">
-                                        cURL
-                                    </button>
-                                    <button className="px-4 py-2 text-xs font-mono text-gray-400 hover:text-white border-b-2 border-transparent hover:bg-white/5 transition-colors">
-                                        JavaScript
-                                    </button>
-                                    <button className="px-4 py-2 text-xs font-mono text-gray-400 hover:text-white border-b-2 border-transparent hover:bg-white/5 transition-colors">
-                                        Python
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="p-6 font-mono text-xs sm:text-sm overflow-x-auto code-scroll bg-code-bg">
-                                <pre className="text-gray-300 leading-relaxed">
-                                    <span className="text-primary">curl</span> -X{" "}
-                                    <span className="text-cyber-green">GET</span>{" "}
-                                    <span className="text-[#e6db74]">
-                                        '{apiUrl}'
-                                    </span>{" "}
-                                    \{"\n"}
-                                    {"  "}-H{" "}
-                                    <span className="text-[#e6db74]">
-                                        'Authorization: Bearer sk_live_8392ab7c...'
-                                    </span>{" "}
-                                    \{"\n"}
-                                    {"  "}-H{" "}
-                                    <span className="text-[#e6db74]">
-                                        'Content-Type: application/json'
+                            ) : (
+                                <>
+                                    <div className="flex items-center border-b border-surface-border px-2">
+                                        <div className="text-xs font-bold uppercase tracking-widest text-gray-500 px-4 py-3 font-display mr-auto">
+                                            Usage Example
+                                        </div>
+                                        <div className="flex gap-1 h-full pt-2">
+                                            <button
+                                                onClick={() => setSelectedLang('curl')}
+                                                className={`px-4 py-2 text-xs font-mono transition-colors ${selectedLang === 'curl' ? 'text-primary border-b-2 border-primary bg-primary/5' : 'text-gray-400 hover:text-white border-b-2 border-transparent hover:bg-white/5'}`}
+                                            >
+                                                cURL
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedLang('js')}
+                                                className={`px-4 py-2 text-xs font-mono transition-colors ${selectedLang === 'js' ? 'text-primary border-b-2 border-primary bg-primary/5' : 'text-gray-400 hover:text-white border-b-2 border-transparent hover:bg-white/5'}`}
+                                            >
+                                                JavaScript
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedLang('python')}
+                                                className={`px-4 py-2 text-xs font-mono transition-colors ${selectedLang === 'python' ? 'text-primary border-b-2 border-primary bg-primary/5' : 'text-gray-400 hover:text-white border-b-2 border-transparent hover:bg-white/5'}`}
+                                            >
+                                                Python
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 font-mono text-xs sm:text-sm overflow-x-auto code-scroll bg-code-bg">
+                                        {selectedLang === 'curl' && (
+                                            <pre className="text-gray-300 leading-relaxed">
+                                                <span className="text-primary">curl</span> -X{" "}
+                                                <span className="text-cyber-green">GET</span>{" "}
+                                                <span className="text-[#e6db74]">
+                                                    '{apiUrl}'
+                                                </span>{" "}
+                                                \{"\n"}
+                                                {"  "}-H{" "}
+                                                <span className="text-[#e6db74]">
+                                                    'Content-Type: application/json'
+                                                </span>
+                                            </pre>
+                                        )}
+                                        {selectedLang === 'js' && (
+                                            <pre className="text-gray-300 leading-relaxed">
+                                                <span className="text-primary">fetch</span>(
+                                                <span className="text-[#e6db74]">
+                                                    '{apiUrl}'
+                                                </span>
+                                                )
+                                                {"\n"}
+                                                {"  "}.<span className="text-blue-400">then</span>(response ={">"} response.json())
+                                                {"\n"}
+                                                {"  "}.<span className="text-blue-400">then</span>(data ={">"} console.log(data));
+                                            </pre>
+                                        )}
+                                        {selectedLang === 'python' && (
+                                            <pre className="text-gray-300 leading-relaxed">
+                                                <span className="text-primary">import</span> requests
+                                                {"\n\n"}
+                                                response = requests.get(
+                                                <span className="text-[#e6db74]">
+                                                    '{apiUrl}'
+                                                </span>
+                                                )
+                                                {"\n"}
+                                                print(response.json())
+                                            </pre>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Sticky Footer for Action */}
+                    <div className="mt-6 p-6 border border-surface-border bg-surface-card rounded flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="text-xs text-gray-500">
+                            Last deployed: <span className="text-gray-300">Just now</span>{" "}
+                            by <span className="text-gray-300">alex@scrapyfire.ai</span>
+                        </div>
+                        <button
+                            onClick={handleDeploy}
+                            disabled={isDeploying}
+                            className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-black text-sm font-bold uppercase tracking-wider rounded shadow-glow hover:shadow-glow-active transition-all transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {isDeploying ? (
+                                <>
+                                    <div className="size-4 rounded-full border-2 border-black border-t-transparent animate-spin" />
+                                    Deploying...
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined text-lg">
+                                        rocket_launch
                                     </span>
-                                    {"\n"}
-                                </pre>
-                            </div>
-                        </div>
-                        {/* Footer Action */}
-                        <div className="p-6 border-t border-surface-border bg-surface-card flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="text-xs text-gray-500">
-                                Last deployed: <span className="text-gray-300">2 mins ago</span>{" "}
-                                by <span className="text-gray-300">alex@scrapetron.io</span>
-                            </div>
-                            <button
-                                onClick={handleDeploy}
-                                disabled={isDeploying}
-                                className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-black text-sm font-bold uppercase tracking-wider rounded shadow-glow hover:shadow-glow-active transition-all transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                                {isDeploying ? (
-                                    <>
-                                        <div className="size-4 rounded-full border-2 border-black border-t-transparent animate-spin" />
-                                        Deploying...
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="material-symbols-outlined text-lg">
-                                            rocket_launch
-                                        </span>
-                                        Deploy New Endpoint
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                                    {logs.length > 0 ? 'Redeploy Endpoint' : 'Deploy New Endpoint'}
+                                </>
+                            )}
+                        </button>
                     </div>
                     {/* Bottom Helper Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">

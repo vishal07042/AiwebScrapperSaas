@@ -20,7 +20,7 @@ export default function AIWebScraper() {
     const [error, setError] = useState('');
     const [showOptions, setShowOptions] = useState(false);
     const [copied, setCopied] = useState(false);
-    
+
     // Deployment states
     const [showDeployModal, setShowDeployModal] = useState(false);
     const [deploymentConfig, setDeploymentConfig] = useState({
@@ -251,7 +251,7 @@ export default function AIWebScraper() {
                                     <Terminal className="w-6 h-6 text-black" />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-white tracking-tight">AI Web Scraper</h1>
+                                    <h1 className="text-2xl font-bold text-white tracking-tight">ScrapyFire.Ai</h1>
                                     <p className="text-sm text-gray-500 mt-0.5">Intelligent data extraction platform</p>
                                 </div>
                             </div>

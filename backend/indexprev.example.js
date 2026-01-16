@@ -672,154 +672,37 @@ app.post("/api/deploy", async (req, res) => {
 	}
 });
 
+// app.post('/api/scrape/leetcode', async (req, res) => {
+//   let browser;
+//   let page;
 
+//   try {
+//     const { username } = req.body;
 
+//     if (!username) {
+//       return res.status(400).json({ error: 'Username is required' });
+//     }
 
-// LeetCode Profile Scraper
-app.post("/api/scrape/leetcode", async (req, res) => {
-  let browser;
-  let page;
+//     const url = `https://leetcode.com/${username}/`;
 
-  try {
-    const { username } = req.body;
+//     browser = await chromium.launch({ headless: true });
+//     page = await browser.newPage();
 
-    if (!username || typeof username !== "string" || username.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        error: "Valid username is required",
-      });
-    }
+//     await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
 
-    const cleanUsername = username.trim();
-    const url = `https://leetcode.com/${cleanUsername}/`;
+//     // Wait for dynamic content to load
+//     await page.waitForTimeout(3000);
 
-    browser = await chromium.launch({ headless: true });
-    page = await browser.newPage();
-
-    // Better chance to avoid detection + faster loading
-    await page.setExtraHTTPHeaders({
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-      "Accept-Language": "en-US,en;q=0.9",
-    });
-
-    await page.goto(url, {
-      waitUntil: "networkidle",
-      timeout: 35000,
-    });
-
-    // Give extra time for React hydration & stats to load
-    await page.waitForTimeout(3500);
-
-    // Try to wait for one of the key elements that usually appears
-    try {
-      await page.waitForSelector('[data-value]', { timeout: 8000 });
-    } catch (e) {
-      // ignore - we'll try anyway
-    }
-
-    const profileData = await page.evaluate(() => {
-      const getText = (selector) =>
-        document.querySelector(selector)?.innerText?.trim() || null;
-
-      const getNumber = (text) => {
-        if (!text) return null;
-        return Number(text.replace(/[^0-9]/g, "")) || null;
-      };
-
-      // Total solved (most common current selectors - Jan 2025)
-      const totalSolved =
-        getNumber(
-          document.querySelector(
-            ".mr-2.text-label-1.dark\\:text-dark-label-1.font-medium"
-          )?.innerText
-        ) ||
-        getNumber(
-          document.querySelector('[data-difficulty="All"] .font-medium')
-            ?.innerText
-        ) ||
-        null;
-
-      // Ranking
-      const rankingText = getText(
-        ".ttext-label-1.dark\\:text-dark-label-1.font-medium"
-      );
-      const ranking = rankingText ? getNumber(rankingText) : null;
-
-      // Difficulty breakdown
-      const easy = getNumber(
-        document.querySelector('[data-difficulty="Easy"] .font-medium')
-          ?.innerText
-      );
-      const medium = getNumber(
-        document.querySelector('[data-difficulty="Medium"] .font-medium')
-          ?.innerText
-      );
-      const hard = getNumber(
-        document.querySelector('[data-difficulty="Hard"] .font-medium')
-          ?.innerText
-      );
-
-      // Contest info (very fragile - changes often)
-      const contestRating = getNumber(
-        document.querySelector(".rating-number")?.innerText
-      );
-
-      return {
-        username: document.querySelector("h3")?.innerText.trim() || null,
-        name:
-          document
-            .querySelector("span.text-label-1.dark\\:text-dark-label-1")
-            ?.innerText.trim() || null,
-        totalSolved,
-        easySolved: easy,
-        mediumSolved: medium,
-        hardSolved: hard,
-        rankingGlobal: ranking,
-        contestRating: contestRating || null,
-        // Optional: you can add more fields like badges, recent submissions, etc.
-      };
-    });
-
-    await page.close();
-    await browser.close();
-
-    // If almost nothing was found → most likely blocked / wrong username / page changed
-    if (!profileData.totalSolved && !profileData.rankingGlobal) {
-      return res.status(404).json({
-        success: false,
-        error: "Could not extract stats - possible reasons: wrong username, private profile, or page structure changed",
-        debug: { url },
-      });
-    }
-
-    res.json({
-      success: true,
-      username: cleanUsername,
-      url: url,
-      data: profileData,
-    });
-  } catch (error) {
-    console.error("LeetCode scrape error:", error);
-
-    if (page) await page.close().catch(() => {});
-    if (browser) await browser.close().catch(() => {});
-
-    let message = "Failed to scrape LeetCode profile";
-
-    if (error.name === "TimeoutError") {
-      message = "Page load timeout - LeetCode might be slow or blocking";
-    } else if (error.message?.includes("net::ERR")) {
-      message = "Network error - cannot reach LeetCode";
-    }
-
-    res.status(500).json({
-      success: false,
-      error: message,
-      details: error.message,
-    });
-  }
-});
+//     const textContent = await page.evaluate(() =>
+//   console.log(`🚀 AI Web Scraper API running on http://localhost:${PORT}`);
+//   console.log(`\nAvailable endpoints:`);
+//   console.log(`  GET  /                          - Health check`);
+//   console.log(`  POST /api/scrape/smart          - Smart scraping (define your own fields!)`);
+//   console.log(`  POST /api/scrape                - Generic scraping`);
+//   console.log(`  GET  /api/scrape/hackernews     - Scrape Hacker News`);
+//   console.log(`  POST /api/scrape/products       - Scrape product listings`);
+//   console.log(`  POST /api/scrape/article        - Scrape article content`);
+// });
 
 // Start server
 app.listen(PORT, () => {

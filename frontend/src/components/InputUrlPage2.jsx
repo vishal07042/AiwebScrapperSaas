@@ -82,9 +82,18 @@ function JsonEditor({ value, onChange, readOnly = false }) {
 export default function InputUrlPage2() {
 
     const navigate = useNavigate(); // ← REQUIRED
-    const [url, setUrl] = useState('https://example.com/products/mens-apparel');
+    const [url, setUrl] = useState('');
     const [mode, setMode] = useState('custom'); // smart, custom, product, article
-    const [prompt, setPrompt] = useState('Extract the following fields for each product on the page:\\n1. Product Name (string)\\n2. Current Price (number)\\n3. Original Price (number, null if not available)\\n4. Rating (float, 0-5)\\n5. Review Count (integer)\\n6. Main Image URL (string)\\n\\nIgnore sponsored items.');
+    const [prompt, setPrompt] = useState(`Extract the following fields for each product on the page:
+1. Product Name (string)
+2. Current Price (number)
+3. Original Price (number, null if not available)
+4. Rating (float, 0-5)
+5. Review Count (integer)
+6. Main Image URL (string)
+and give me structured data in json format
+
+Ignore sponsored items.`);
     const [fields, setFields] = useState([
         { name: 'title', type: 'string', description: 'Page title', optional: false }
     ]);
@@ -423,7 +432,7 @@ export default function InputUrlPage2() {
                                 data_object
                             </span>
                             <span className="hidden lg:block ml-3 font-bold tracking-wider text-lg">
-                                SCRAPER.AI
+                                ScrapyFire.Ai
                             </span>
                         </div>
                     </div>
