@@ -18,24 +18,14 @@ app.use(express.json());
 
 app.use(express.static(path.join(process.cwd(), "dist")));
 
-// Health check endpoint
-// app.get("/", (req, res) => {
-// 	res.json({ message: "AI Web Scraper API is running!" });
-// });
-
-app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "dist", "index.html"));
+app.get("/", (req, res) => {
+    res.json({ message: "AI Web Scraper API is running!" });
 });
 
 // Smart Generic scraping endpoint - No predefined schema needed!
 app.post("/api/scrape/smart", async (req, res) => {
-	let browser;
-	let page;
-
 	try {
 		const { url, fields, options = {} } = req.body;
-
-		// Default options
 		const {
 			maxChars = 15000, // How much text to send to AI
 			waitTime = 2000, // Wait for dynamic content (ms)
