@@ -19,8 +19,12 @@ app.use(express.json());
 app.use(express.static(path.join(process.cwd(), "dist")));
 
 // Health check endpoint
-app.get("/", (req, res) => {
-	res.json({ message: "AI Web Scraper API is running!" });
+// app.get("/", (req, res) => {
+// 	res.json({ message: "AI Web Scraper API is running!" });
+// });
+
+app.get("*", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "dist", "index.html"));
 });
 
 // Smart Generic scraping endpoint - No predefined schema needed!
