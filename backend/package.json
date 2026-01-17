@@ -18,6 +18,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		
 		"@ai-sdk/google": "^3.0.7",
 		"ai": "^6.0.33",
 		"cors": "^2.8.5",
