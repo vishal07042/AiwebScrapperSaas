@@ -1,0 +1,36 @@
+{
+	"name": "backend",
+	"version": "1.0.0",
+	"description": "AI-powered web scraper",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"start": "node index.js",
+		"dev": "nodemon index.js",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [
+		"scraper",
+		"ai",
+		"playwright"
+	],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"@ai-sdk/google": "^3.0.7",
+		"ai": "^6.0.33",
+		"cors": "^2.8.5",
+		"dotenv": "^16.4.7",
+		"express": "^4.21.2",
+		"playwright": "^1.57.0",
+		"razorpay": "^2.9.6",
+		"zod": "^3.25.76"
+	},
+	"overrides": {
+		"ai": "^6.0.33",
+		"@ai-sdk/google": "^3.0.7"
+	},
+	"devDependencies": {
+		"nodemon": "^3.0.2"
+	}
+}
