@@ -85,7 +85,7 @@ export default function AIWebScraper() {
 
             switch (mode) {
                 case 'smart':
-                    endpoint = 'http://13.218.77.175/:3000/api/scrape/smart';
+                    endpoint = 'http://13.218.77.175:3000/api/scrape/smart';
                     body.fields = fields.map(f => ({
                         name: f.name,
                         type: f.type,
@@ -94,14 +94,14 @@ export default function AIWebScraper() {
                     }));
                     break;
                 case 'custom':
-                    endpoint = 'http://13.218.77.175/:3000/api/scrape';
+                    endpoint = 'http://13.218.77.175:3000/api/scrape';
                     body.prompt = prompt;
                     break;
                 case 'product':
-                    endpoint = 'http://13.218.77.175/:3000/api/scrape/products';
+                    endpoint = 'http://13.218.77.175:3000/api/scrape/products';
                     break;
                 case 'article':
-                    endpoint = 'http://13.218.77.175/:3000/api/scrape/article';
+                    endpoint = 'http://13.218.77.175:3000/api/scrape/article';
                     break;
                 default:
                     throw new Error('Invalid mode selected');
@@ -121,7 +121,7 @@ export default function AIWebScraper() {
                 setError(data.error || 'Scraping failed');
             }
         } catch (err) {
-            setError('Failed to connect to scraper API. Make sure the server is running on http://13.218.77.175/:3000');
+            setError('Failed to connect to scraper API. Make sure the server is running on http://13.218.77.175:3000');
         } finally {
             setLoading(false);
         }
@@ -195,7 +195,7 @@ export default function AIWebScraper() {
         setError('');
 
         try {
-            const response = await fetch('http://13.218.77.175/:3000/api/deploy', {
+            const response = await fetch('http://13.218.77.175:3000/api/deploy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
