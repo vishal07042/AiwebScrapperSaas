@@ -121,7 +121,7 @@ export default function AIWebScraper() {
                 setError(data.error || 'Scraping failed');
             }
         } catch (err) {
-            setError('Failed to connect to scraper API. Make sure the backend is running.');
+            setError('Failed to connect to scraper API. Make sure the server is running on http://localhost:3000');
         } finally {
             setLoading(false);
         }

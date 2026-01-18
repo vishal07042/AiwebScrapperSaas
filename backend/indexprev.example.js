@@ -706,7 +706,9 @@ app.post("/api/deploy", async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-	console.log(`🚀 AI Web Scraper API running on http://localhost:${PORT}`);
+	console.log(
+		`🚀 AI Web Scraper API running on http://13.218.77.175:${PORT}`,
+	);
 	console.log(`\nAvailable endpoints:`);
 	console.log(`  GET  /                          - Health check`);
 	console.log(`  POST /api/scrape                - Generic scraping`);

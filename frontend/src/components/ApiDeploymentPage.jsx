@@ -42,7 +42,7 @@ function ApiDeploymentPage() {
             await new Promise(r => setTimeout(r, 800)); // UX delay
             addLog('Authenticating with Cloudflare API...');
 
-            const response = await fetch('http://localhost:3000/api/deploy', {
+            const response = await fetch('/api/deploy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
