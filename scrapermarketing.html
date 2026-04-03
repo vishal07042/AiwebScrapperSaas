@@ -1,0 +1,1109 @@
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box
+    }
+
+    .stage {
+        position: relative;
+        width: 100%;
+        height: 520px;
+        background: #09090c;
+        border-radius: 16px;
+        overflow: hidden;
+        font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    .dots {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 28px 28px;
+        pointer-events: none;
+    }
+
+    .vig {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background: radial-gradient(ellipse 90% 90% at 50% 50%, transparent 30%, rgba(2, 2, 3, 0.85) 100%);
+        pointer-events: none;
+    }
+
+    .glow1 {
+        position: absolute;
+        width: 600px;
+        height: 500px;
+        border-radius: 50%;
+        z-index: 0;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, transparent 70%);
+        filter: blur(80px);
+        top: -150px;
+        left: -150px;
+        pointer-events: none;
+        animation: g1 16s ease-in-out infinite alternate;
+    }
+
+    .glow2 {
+        position: absolute;
+        width: 600px;
+        height: 500px;
+        border-radius: 50%;
+        z-index: 0;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
+        filter: blur(80px);
+        bottom: -150px;
+        right: -150px;
+        pointer-events: none;
+        animation: g2 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes g1 {
+        0% {
+            transform: translate(-60px, -40px)
+        }
+
+        100% {
+            transform: translate(120px, 60px)
+        }
+    }
+
+    @keyframes g2 {
+        0% {
+            transform: translate(60px, 40px)
+        }
+
+        100% {
+            transform: translate(-120px, -80px)
+        }
+    }
+
+    .scene {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        z-index: 2;
+        will-change: opacity, visibility;
+    }
+
+    .s1 {
+        animation: sc1 24s 0s infinite
+    }
+
+    .s2 {
+        animation: sc2 24s 6s infinite
+    }
+
+    .s3 {
+        animation: sc3 24s 12s infinite
+    }
+
+    .s4 {
+        animation: sc4 24s 18s infinite
+    }
+
+    @keyframes sc1 {
+        0% {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px)
+        }
+
+        4% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0)
+        }
+
+        79% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0)
+        }
+
+        96% {
+            opacity: 0;
+            transform: translateY(-5px)
+        }
+
+        100% {
+            opacity: 0;
+            visibility: hidden
+        }
+    }
+
+    @keyframes sc2 {
+        0% {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px)
+        }
+
+        4% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0)
+        }
+
+        79% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0)
+        }
+
+        96% {
+            opacity: 0;
+            transform: translateY(-5px)
+        }
+
+        100% {
+            opacity: 0;
+            visibility: hidden
+        }
+    }
+
+    @keyframes sc3 {
+        0% {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px)
+        }
+
+        4% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0)
+        }
+
+        79% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0)
+        }
+
+        96% {
+            opacity: 0;
+            transform: translateY(-5px)
+        }
+
+        100% {
+            opacity: 0;
+            visibility: hidden
+        }
+    }
+
+    @keyframes sc4 {
+        0% {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px)
+        }
+
+        4% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0)
+        }
+
+        79% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0)
+        }
+
+        96% {
+            opacity: 0;
+            transform: translateY(-5px)
+        }
+
+        100% {
+            opacity: 0;
+            visibility: hidden
+        }
+    }
+
+    .mono {
+        font-family: 'JetBrains Mono', ui-monospace, monospace
+    }
+
+    .eyebrow {
+        font-size: 10px;
+        font-weight: 600;
+        color: #3f3f46;
+        letter-spacing: 3px;
+        margin-bottom: 10px
+    }
+
+    .tbar {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.025);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04)
+    }
+
+    .d {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%
+    }
+
+    .dr {
+        background: #ff5f57;
+        opacity: .65
+    }
+
+    .dy {
+        background: #febc2e;
+        opacity: .65
+    }
+
+    .dg {
+        background: #28c840;
+        opacity: .65
+    }
+
+    .tbar-title {
+        flex: 1;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: #3f3f46
+    }
+
+    /* SCENE 1 */
+    .s1-wrap {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        padding: 0 40px;
+        width: 100%;
+        height: 100%
+    }
+
+    .s1-left {
+        flex: 0 0 220px
+    }
+
+    .hl {
+        font-size: clamp(36px, 4.8vw, 62px);
+        font-weight: 900;
+        line-height: 1.02;
+        letter-spacing: -2px;
+        background: linear-gradient(180deg, #fafafa 0%, #a0a0b0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text
+    }
+
+    .hem {
+        font-size: clamp(36px, 4.8vw, 62px);
+        font-weight: 900;
+        line-height: 1.02;
+        letter-spacing: -2px;
+        background: linear-gradient(90deg, #34d399, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text
+    }
+
+    .hsub {
+        font-size: 14px;
+        color: #52525b;
+        margin-top: 6px
+    }
+
+    .uicard {
+        flex: 1;
+        min-width: 0;
+        background: #0e0e12;
+        border: 1.5px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .65)
+    }
+
+    .cbody {
+        padding: 14px
+    }
+
+    .urlbar {
+        background: #08080b;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 11px;
+        margin-bottom: 10px
+    }
+
+    .urlbar span:first-child {
+        color: #3f3f46
+    }
+
+    .urlbar span+span {
+        color: #71717a
+    }
+
+    .pbox {
+        background: #0b0b0f;
+        border: 1.5px solid rgba(129, 140, 248, 0.2);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 10px
+    }
+
+    .plabel {
+        font-size: 9px;
+        font-weight: 600;
+        color: #3f3f46;
+        letter-spacing: 2px;
+        margin-bottom: 6px
+    }
+
+    .ptext {
+        font-size: clamp(12px, 1.1vw, 15px);
+        font-weight: 600;
+        color: #fafafa;
+        line-height: 1.35
+    }
+
+    .phint {
+        font-size: 10px;
+        color: #3f3f46;
+        margin-top: 5px
+    }
+
+    .chips {
+        display: flex;
+        gap: 7px;
+        margin-bottom: 9px;
+        flex-wrap: wrap
+    }
+
+    .chip {
+        padding: 4px 11px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 600;
+        border: 1px solid
+    }
+
+    .ci {
+        color: #818cf8;
+        border-color: rgba(129, 140, 248, 0.25);
+        background: rgba(129, 140, 248, 0.08)
+    }
+
+    .ce {
+        color: #34d399;
+        border-color: rgba(52, 211, 153, 0.22);
+        background: rgba(52, 211, 153, 0.07)
+    }
+
+    .ctarow {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 9px
+    }
+
+    .cta {
+        background: linear-gradient(90deg, #818cf8, #6366f1);
+        color: #fff;
+        border: none;
+        border-radius: 7px;
+        padding: 8px 18px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer
+    }
+
+    .divl {
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.045);
+        margin: 0 0 9px
+    }
+
+    .srow {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        color: #3f3f46;
+        flex-wrap: wrap
+    }
+
+    .sv {
+        color: #34d399
+    }
+
+    .sright {
+        margin-left: auto
+    }
+
+    .spill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 7px;
+        padding: 4px 11px 4px 8px;
+        border-radius: 14px;
+        background: rgba(52, 211, 153, 0.06);
+        border: 1px solid rgba(52, 211, 153, 0.14);
+        font-size: 10px;
+        font-weight: 600;
+        color: #34d399
+    }
+
+    .sdot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #34d399
+    }
+
+    /* SCENE 2 */
+    .s2-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 0 24px;
+        width: 100%;
+        height: 100%
+    }
+
+    .s2head {
+        text-align: center;
+        line-height: 1
+    }
+
+    .s2h {
+        font-size: clamp(40px, 5vw, 64px);
+        font-weight: 900;
+        letter-spacing: -2.5px;
+        line-height: 1.02
+    }
+
+    .s2hw {
+        background: linear-gradient(180deg, #fafafa, #a0a0b0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text
+    }
+
+    .s2hg {
+        background: linear-gradient(90deg, #34d399, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text
+    }
+
+    .flow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        gap: 0
+    }
+
+    .fcard {
+        background: #0e0e12;
+        border: 1.5px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 16px;
+        flex: 0 0 auto;
+        width: clamp(150px, 17vw, 200px);
+        box-shadow: 0 14px 40px rgba(0, 0, 0, .55)
+    }
+
+    .fcard-em {
+        border-color: rgba(52, 211, 153, 0.25) !important
+    }
+
+    .flabel {
+        text-align: center;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+        color: #3f3f46
+    }
+
+    .sk {
+        height: 6px;
+        border-radius: 3px;
+        background: #1c1c22;
+        margin-bottom: 7px
+    }
+
+    .fchaos {
+        font-size: 10px;
+        color: #52525b;
+        text-align: center;
+        margin-top: 4px
+    }
+
+    .beam {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 0 6px;
+        min-width: 20px
+    }
+
+    .bline {
+        flex: 1;
+        height: 2px;
+        position: relative;
+        overflow: hidden
+    }
+
+    .bi {
+        background: rgba(129, 140, 248, 0.3)
+    }
+
+    .be {
+        background: rgba(52, 211, 153, 0.3)
+    }
+
+    .bline::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+        animation: sw 1.8s ease-in-out infinite
+    }
+
+    @keyframes sw {
+        0% {
+            transform: translateX(-100%)
+        }
+
+        100% {
+            transform: translateX(200%)
+        }
+    }
+
+    .barrow {
+        font-size: 12px;
+        line-height: 1;
+        flex: 0 0 auto
+    }
+
+    .baind {
+        color: #818cf8
+    }
+
+    .baem {
+        color: #34d399
+    }
+
+    .aicircle {
+        flex: 0 0 auto;
+        width: clamp(110px, 11vw, 145px);
+        height: clamp(110px, 11vw, 145px);
+        border-radius: 50%;
+        background: #0e0e12;
+        border: 1.5px solid rgba(129, 140, 248, 0.3);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, .55)
+    }
+
+    .aicore {
+        width: 36%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: rgba(129, 140, 248, 0.08);
+        border: 1.5px solid rgba(129, 140, 248, 0.38);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(12px, 1.3vw, 16px);
+        font-weight: 800;
+        color: #818cf8
+    }
+
+    .ailabel {
+        font-size: 10px;
+        font-weight: 600;
+        color: #52525b
+    }
+
+    .ocard {
+        background: #0e0e12;
+        border: 1.5px solid rgba(52, 211, 153, 0.25);
+        border-radius: 12px;
+        padding: 16px;
+        flex: 0 0 auto;
+        width: clamp(180px, 20vw, 240px);
+        box-shadow: 0 14px 40px rgba(0, 0, 0, .55)
+    }
+
+    .olabel {
+        font-size: 9px;
+        font-weight: 600;
+        color: #34d399;
+        letter-spacing: 2px;
+        text-align: center;
+        margin-bottom: 10px
+    }
+
+    .cl {
+        font-size: clamp(10px, 0.95vw, 12px);
+        line-height: 1.75
+    }
+
+    .ck {
+        color: #818cf8
+    }
+
+    .cs {
+        color: #fafafa
+    }
+
+    .cn {
+        color: #34d399
+    }
+
+    .cd {
+        color: #52525b
+    }
+
+    .odiv {
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        margin: 8px 0
+    }
+
+    .ostats {
+        font-size: 11px;
+        color: #34d399
+    }
+
+    .ofooter {
+        font-size: 10px;
+        color: #3f3f46;
+        text-align: center;
+        margin-top: 6px
+    }
+
+    /* SCENE 3 */
+    .s3-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 0 32px;
+        width: 100%;
+        height: 100%
+    }
+
+    .s3h {
+        font-size: clamp(34px, 4.5vw, 58px);
+        font-weight: 900;
+        letter-spacing: -2px;
+        background: linear-gradient(180deg, #fafafa, #a0a0b0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center
+    }
+
+    .term {
+        width: 100%;
+        background: #0b0b0e;
+        border: 1.5px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .65)
+    }
+
+    .tmbody {
+        padding: 16px 22px
+    }
+
+    .tl {
+        font-size: clamp(9px, 0.9vw, 12px);
+        line-height: 1.85
+    }
+
+    .tp {
+        color: #52525b
+    }
+
+    .tc {
+        color: #a1a1aa
+    }
+
+    .tpr {
+        color: #3f3f46
+    }
+
+    .tok {
+        color: #34d399
+    }
+
+    .tmu {
+        color: #52525b
+    }
+
+    .tur {
+        color: #818cf8
+    }
+
+    .tsp {
+        display: block;
+        height: 5px
+    }
+
+    .livebadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 13px 4px 9px;
+        border-radius: 14px;
+        background: rgba(52, 211, 153, 0.07);
+        border: 1.5px solid rgba(52, 211, 153, 0.28);
+        font-size: 12px;
+        font-weight: 700;
+        color: #34d399;
+        align-self: flex-end
+    }
+
+    .ldot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #34d399;
+        animation: pu 1.4s ease-in-out infinite
+    }
+
+    @keyframes pu {
+
+        0%,
+        100% {
+            opacity: 1
+        }
+
+        50% {
+            opacity: .2
+        }
+    }
+
+    /* SCENE 4 */
+    .s4-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 0 40px;
+        width: 100%;
+        height: 100%;
+        text-align: center
+    }
+
+    .s4logo {
+        font-size: clamp(52px, 6.5vw, 88px);
+        font-weight: 900;
+        letter-spacing: -3px;
+        background: linear-gradient(180deg, #fafafa, #a0a0b0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1
+    }
+
+    .s4logo em {
+        background: linear-gradient(90deg, #34d399, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-style: normal
+    }
+
+    .s4tag {
+        font-size: clamp(12px, 1.2vw, 17px);
+        font-weight: 500;
+        color: #52525b;
+        letter-spacing: -.2px
+    }
+
+    .sgrid {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center
+    }
+
+    .scard {
+        background: #0e0e12;
+        border: 1.5px solid rgba(255, 255, 255, 0.07);
+        border-radius: 10px;
+        padding: 12px 22px;
+        min-width: 140px;
+        text-align: center
+    }
+
+    .slabel {
+        font-size: 9px;
+        font-weight: 600;
+        color: #3f3f46;
+        letter-spacing: 1.5px;
+        margin-bottom: 4px
+    }
+
+    .sval {
+        font-size: clamp(16px, 1.8vw, 22px);
+        font-weight: 800
+    }
+
+    .vg {
+        color: #34d399
+    }
+
+    .vi {
+        color: #818cf8
+    }
+
+    .vw {
+        color: #fafafa
+    }
+
+    .cmdbar {
+        background: #0b0b0e;
+        border: 1.5px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%
+    }
+
+    .cmdtxt {
+        font-size: clamp(10px, 1vw, 14px);
+        color: #71717a;
+        flex: 1
+    }
+
+    .cmdok {
+        font-size: clamp(10px, 1vw, 14px);
+        color: #34d399
+    }
+</style>
+
+<div class="stage">
+    <div class="dots"></div>
+    <div class="glow1"></div>
+    <div class="glow2"></div>
+    <div class="vig"></div>
+
+    <!-- SCENE 1 -->
+    <div class="scene s1">
+        <div class="s1-wrap">
+            <div class="s1-left">
+                <div class="eyebrow">WEB INTELLIGENCE PLATFORM</div>
+                <div class="hl">Describe.</div>
+                <div class="hl">Extract.</div>
+                <div class="hem">Deploy.</div>
+                <div class="hsub">No selectors. No code. No tears.</div>
+            </div>
+            <div class="uicard">
+                <div class="tbar">
+                    <div class="d dr"></div>
+                    <div class="d dy"></div>
+                    <div class="d dg"></div>
+                    <div class="tbar-title">ScraperAI — New Extraction</div>
+                </div>
+                <div class="cbody">
+                    <div class="urlbar mono"><span>https://</span><span>shop.example.com/laptops</span></div>
+                    <div class="pbox">
+                        <div class="plabel">PROMPT</div>
+                        <div class="ptext">"Extract all laptops with name, price and rating"</div>
+                        <div class="phint">Targeting: .product-card — AI will auto-detect structure</div>
+                    </div>
+                    <div class="chips">
+                        <div class="chip ci">JSON</div>
+                        <div class="chip ci">Paginate</div>
+                        <div class="chip ce">Dedupe</div>
+                    </div>
+                    <div class="ctarow"><button class="cta">Extract now →</button></div>
+                    <hr class="divl">
+                    <div class="srow">
+                        <span>Last run</span><span class="sv">1.8s</span>
+                        <span>· 213 items · 0 errors</span>
+                        <span class="sright">Powered by Gemini 1.5 Pro</span>
+                    </div>
+                    <div style="display:flex;align-items:center">
+                        <div class="spill">
+                            <div class="sdot"></div>Ready
+                        </div>
+                        <span style="font-size:10px;color:#3f3f46;margin-left:10px">≈ $0.003 / run</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCENE 2 -->
+    <div class="scene s2">
+        <div class="s2-wrap">
+            <div class="s2head">
+                <div class="eyebrow" style="text-align:center">HOW IT WORKS</div>
+                <div class="s2h s2hw">HTML in.</div>
+                <div class="s2h s2hg">JSON out.</div>
+            </div>
+            <div class="flow">
+                <div class="fcard">
+                    <div class="flabel">SOURCE HTML</div>
+                    <div class="sk" style="width:90%"></div>
+                    <div class="sk" style="width:68%;margin-left:12px"></div>
+                    <div class="sk" style="width:82%"></div>
+                    <div class="sk" style="width:55%;margin-left:18px"></div>
+                    <div class="sk" style="width:76%"></div>
+                    <div class="sk" style="width:62%;margin-left:12px"></div>
+                    <div class="fchaos">Unstructured chaos</div>
+                </div>
+                <div class="beam">
+                    <div class="bline bi"></div><span class="barrow baind">▶</span>
+                </div>
+                <div class="aicircle">
+                    <div class="aicore">AI</div>
+                    <div class="ailabel">Gemini 1.5 Pro</div>
+                </div>
+                <div class="beam">
+                    <div class="bline be"></div><span class="barrow baem">▶</span>
+                </div>
+                <div class="ocard fcard-em">
+                    <div class="olabel">STRUCTURED OUTPUT</div>
+                    <div class="mono">
+                        <div class="cl cd">[{</div>
+                        <div class="cl">&nbsp;&nbsp;<span class="ck">"name"</span><span class="cd">: </span><span
+                                class="cs">"MacBook Pro 14"</span><span class="cd">,</span></div>
+                        <div class="cl">&nbsp;&nbsp;<span class="ck">"price"</span><span class="cd">: </span><span
+                                class="cn">1999</span><span class="cd">,</span></div>
+                        <div class="cl">&nbsp;&nbsp;<span class="ck">"rating"</span><span class="cd">: </span><span
+                                class="cn">4.9</span><span class="cd">,</span></div>
+                        <div class="cl">&nbsp;&nbsp;<span class="ck">"inStock"</span><span class="cd">: </span><span
+                                class="ck">true</span></div>
+                        <div class="cl cd">},...</div>
+                    </div>
+                    <hr class="odiv">
+                    <div class="ostats">✓ 213 records · 1.8s · 0 errors</div>
+                    <div class="ofooter">Type-safe. Consistent. Always.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCENE 3 -->
+    <div class="scene s3">
+        <div class="s3-wrap">
+            <div class="eyebrow" style="text-align:center">DEPLOYMENT</div>
+            <div class="s3h">Live in seconds.</div>
+            <div class="term">
+                <div class="tbar">
+                    <div class="d dr"></div>
+                    <div class="d dy"></div>
+                    <div class="d dg"></div>
+                    <div class="tbar-title">bash — scraperAI</div>
+                </div>
+                <div class="tmbody">
+                    <div class="tl mono"><span class="tp">$ </span><span class="tc">scraperAI deploy
+                            --name="product-api" --region=auto</span></div>
+                    <span class="tsp"></span>
+                    <div class="tl mono tpr"> › Bundling Cloudflare Worker...</div>
+                    <div class="tl mono tpr"> › Compressing + uploading (14 KB)...</div>
+                    <div class="tl mono tpr"> › Propagating to 300+ edge locations...</div>
+                    <span class="tsp"></span>
+                    <div class="tl mono"><span class="tok">✓ Deployed to Cloudflare Workers </span><span
+                            class="tmu">(2.1s)</span></div>
+                    <div class="tl mono tmu">&nbsp;&nbsp;Endpoint&nbsp;&nbsp;<span
+                            class="tur">https://product-api.vishscraper.workers.dev/extract</span></div>
+                    <span class="tsp"></span>
+                    <div class="tl mono"><span class="tp">$ </span><span class="tc">curl
+                            https://product-api.vishscraper.workers.dev/extract</span></div>
+                    <div class="tl mono"><span class="tok">→ 200 OK&nbsp;&nbsp;</span><span
+                            class="tmu">[{"name":"MacBook Pro",...}, ...]</span></div>
+                </div>
+            </div>
+            <div class="livebadge">
+                <div class="ldot"></div>LIVE
+            </div>
+        </div>
+    </div>
+
+    <!-- SCENE 4 -->
+    <div class="scene s4">
+        <div class="s4-wrap">
+            <div class="eyebrow">WEB INTELLIGENCE PLATFORM</div>
+            <div class="s4logo">Scraper<em>AI</em></div>
+            <div class="s4tag">Data extraction, reimagined for the AI era.</div>
+            <div class="sgrid">
+                <div class="scard">
+                    <div class="slabel">AVG EXTRACTION</div>
+                    <div class="sval vg">1.8s</div>
+                </div>
+                <div class="scard">
+                    <div class="slabel">UPTIME SLA</div>
+                    <div class="sval vi">99.9%</div>
+                </div>
+                <div class="scard">
+                    <div class="slabel">EDGE LOCATIONS</div>
+                    <div class="sval vw">300+</div>
+                </div>
+            </div>
+            <div class="cmdbar">
+                <span class="cmdtxt mono">$ &nbsp;curl -X POST api.scraperai.dev/extract</span>
+                <span class="cmdok mono">→ 200</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const scenes = document.querySelectorAll('.scene');
+    let current = 0;
+    scenes[0].style.opacity = '1';
+    scenes[0].style.visibility = 'visible';
+    scenes[0].style.transform = 'translateY(0)';
+    scenes[0].style.animation = 'none';
+
+    function showScene(idx) {
+        scenes.forEach((s, i) => {
+            s.style.animation = 'none';
+            if (i === idx) {
+                s.style.opacity = '1';
+                s.style.visibility = 'visible';
+                s.style.transform = 'translateY(0)';
+                s.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            } else {
+                s.style.opacity = '0';
+                s.style.visibility = 'hidden';
+                s.style.transform = i < idx ? 'translateY(-5px)' : 'translateY(8px)';
+                s.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            }
+        });
+    }
+
+    showScene(0);
+    setInterval(() => {
+        current = (current + 1) % scenes.length;
+        showScene(current);
+    }, 3000);
+</script>
